@@ -16,5 +16,8 @@
     "url": "https://github.com/bsthomson/liri-node-app/issues"
   },
   "homepage": "https://github.com/bsthomson/liri-node-app#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "node-spotify-api": "^1.0.7"
+  }
 }
