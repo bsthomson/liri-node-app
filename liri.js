@@ -7,7 +7,6 @@ const Twitter = require("twitter");
 const request = require("request");
 
 const keys = require("./keys.js");
-// const randomTxt = require("./random.txt");
 
 var spotify = new Spotify(keys.spotify);
 var client = new Twitter(keys.twitter);
@@ -15,90 +14,97 @@ var client = new Twitter(keys.twitter);
 var command = process.argv[2];
 var search = process.argv.slice(3).join(" ");
 
-var trackQuery; 
+// var trackQuery; 
 function spotInput() {
-    if (search === undefined) {
-        trackQuery = "ace of base";
-    } else {
-        trackQuery = search;
-    }
+    if (search === "") {
+        search = "ace of base";
+    } debugger;
+    spotify.search({type: 'track', query: search, limit: '1'}, function(err, data) {        
+        if (err) {
+            return console.log('Error occurred: ' + err);
+        }
+        var results = `
+        \nArtist: ${data.tracks.items[0].album.artists[0].name}
+        \nTrack: ${data.tracks.items[0].name}
+        \nDemo: ${data.tracks.items[0].preview_url}
+        \nAlbum: ${data.tracks.items[0].album.name}`
+        console.log(results);
+        logThis(results);        
+    });
 };
 
-var movieQuery;
 function movieInput() {
-    if (search === undefined) {
-        movieQuery = "mr nobody";
-    } else {
-        movieQuery = search;
+    if (search === "") {
+        search = "mr nobody";
     }
+    request('https://www.omdbapi.com/?apikey=trilogy&t=' + search + '&plot=short&r=json', function (error, response, body) {
+        if (error) {
+            return console.log('error', error); 
+        } 
+        movie = JSON.parse(body);
+        var results = `
+        \nThe title of the movie is '${movie.Title}'
+        \nThis movie came out in ${movie.Year}
+        \n${movie.Ratings[0].Source}: ${movie.Ratings[0].Value}
+        \n${movie.Ratings[1].Source}: ${movie.Ratings[1].Value}
+        \nThis movie was produced in ${movie.Country}
+        \nLanguage(s): ${movie.Language}
+        \nPlot: ${movie.Plot}
+        \nActors: ${movie.Actors}`
+        console.log(results);
+        logThis(results);
+    });
 };
 
 function myTweets () {
-    var params = {screen_name: 'BBlimpson'};
-    client.get('statuses/user_timeline', params, function(error, tweets, response){
+    var params = {screen_name: 'BBlimpson'};    
+    client.get('statuses/user_timeline', params, function(error, tweets, response){        
         if (error) {
             console.log(error);
         } else if (tweets.length < 21) {
             for (i=0; i < tweets.length; i++){
-                console.log("On " + tweets[i].created_at + " Blam Blimpson tweeted " + tweets[i].text)
+                var results = "\nOn " + tweets[i].created_at + " Blam Blimpson tweeted " + tweets[i].text;
+                console.log(results)
+                logThis(results);
             };
         } else {
             for (i=0; i < 21; i++){
-                console.log("On " + tweets[i].created_at + " Blam Blimpson tweeted " + tweets[i].text)
+                var results = "\nOn " + tweets[i].created_at + " Blam Blimpson tweeted " + tweets[i].text;
+                console.log(results)
+                logThis(results);
             };
         }
     });
+};
+
+function logThis(results) {
+    fs.appendFile('log.txt', results + ", ", (err) => {
+        if (err) throw err;
+    })
 };
 
 if (command === "my-tweets") {
     myTweets();
 } else if (command === "spotify-this-song") {
     spotInput();
-    spotify.search({type: 'track', query: trackQuery, limit: '1'}, function(err, data) {
-        if (err) {
-            return console.log('Error occurred: ' + err);
-        }
-        console.log("----");
-        console.log("The artist is " + data.tracks.items[0].album.artists[0].name);
-        console.log("----");
-        console.log("The full track name is " + "'" + data.tracks.items[0].name + "'");
-        console.log("----");
-        console.log("A demo can be heard at " + data.tracks.items[0].preview_url);
-        console.log("----");
-        console.log("An album the track can be found on is " + "'" + data.tracks.items[0].album.name + "'");        
-    });
 } else if (command === "movie-this") {
     movieInput();
-    request('https://www.omdbapi.com/?apikey=trilogy&t=' + movieQuery + '&plot=short&r=json', function (error, response, body) {
-        if (error) {
-            return console.log('error', error); 
-        } 
-        movie = JSON.parse(body);
-        console.log("----");
-        console.log("The title of the movie is " + "'" + movie.Title + "'");
-        console.log("----");
-        console.log("This movie came out in " + movie.Year);
-        console.log("----");
-        console.log(movie.Ratings[0].Source + " " + movie.Ratings[0].Value);
-        console.log("----");
-        console.log(movie.Ratings[1].Source + " " + movie.Ratings[1].Value);
-        console.log("----");
-        console.log("This movie was produced in " + movie.Country);
-        console.log("----");
-        console.log("This movie came out in these languages " + movie.Language);
-        console.log("----");
-        console.log("Plot: " + movie.Plot);
-        console.log("----");
-        console.log("These were the actors in the movie: " + movie.Actors);
-    })
 } else if (command === "do-what-it-says") {
     fs.readFile("./random.txt", "utf8", (err, data) => {
         if (err) {
             return console.log(err);
         }
         var dataArray = data.split(",");
-        
+        if (dataArray[0] === 'my-tweets') {
+            myTweets();
+        } else if (dataArray[0] === "spotify-this-song") {
+            search = dataArray[1];
+            spotInput();
+        } else if (dataArray[0] === "movie-this") {
+            search = dataArray[1];
+            movieInput();
+        }
     })
 } else {
-    console.log("You speak gibberish and I wnat nothing to do with it");
+    console.log("Possible commands: my-tweets, spotify-this-song (song), movie-this (movie), or do-what-it-says");
 };
