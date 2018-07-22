@@ -1,20 +1,25 @@
+// The .env
 require("dotenv").config();
 
+// fs module
 const fs = require("fs");
 
+// npm modules
 const Spotify = require("node-spotify-api");
 const Twitter = require("twitter");
 const request = require("request");
 
+// keys js file
 const keys = require("./keys.js");
 
+// constructors to get the keys from the keys file
 var spotify = new Spotify(keys.spotify);
 var client = new Twitter(keys.twitter);
 
 var command = process.argv[2];
 var search = process.argv.slice(3).join(" ");
 
-// var trackQuery; 
+// function to search for and display spotify results
 function spotInput() {
     if (search === "") {
         search = "ace of base";
@@ -33,6 +38,7 @@ function spotInput() {
     });
 };
 
+// function to call the omdb and display results
 function movieInput() {
     if (search === "") {
         search = "mr nobody";
@@ -56,6 +62,7 @@ function movieInput() {
     });
 };
 
+//function to call my tweets and display them
 function myTweets () {
     var params = {screen_name: 'BBlimpson'};    
     client.get('statuses/user_timeline', params, function(error, tweets, response){        
@@ -77,12 +84,14 @@ function myTweets () {
     });
 };
 
+// funtion to log result in the log.txt
 function logThis(results) {
     fs.appendFile('log.txt', results + ", ", (err) => {
         if (err) throw err;
     })
 };
 
+// calls functions depending on command line input
 if (command === "my-tweets") {
     myTweets();
 } else if (command === "spotify-this-song") {
